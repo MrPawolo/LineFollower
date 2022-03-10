@@ -1,0 +1,7 @@
+{
+    "sketch": "LineFollower.ino",
+    "output": "build",
+    "board": "arduino:avr:uno",
+    "programmer": "arduino:avrispmkii",
+    "port": "COM4"
+}
