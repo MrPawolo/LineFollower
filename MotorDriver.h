@@ -1,33 +1,40 @@
-#ifndef MOTOR_DRIVER
-#define MOTOR_DRIVER
+#ifndef MOTOR_DRIVER_H
+#define MOTOR_DRIVER_H
+
+
+#include "MyFuncs.h"
+#include "Arduino.h"
 
 class MotorDriver
 {
 public:
-    MotorDriver(uint8_t fwd_pin, uint8_t bwd_pin, uint8_t pwm_pin, float accel_val, float deaccel_val, float max_val);
+    //contructor
+    MotorDriver(uint8_t fwd_pin, uint8_t bwd_pin, uint8_t pwm_pin, int vel_change, int max_val);
 
-    void setup(uint8_t fwd_pin, uint8_t bwd_pin, uint8_t pwm_pin, float accel_val, float deaccel_val, float max_val);
+    void setupValues(uint8_t fwd_pin, uint8_t bwd_pin, uint8_t pwm_pin, int vel_Change, int max_val);
+    //need to be called in setup()
+    void setup();
 
     // call this func every loop if you've set accel_val or deaccel_vale greater than 0
     void tick();
 
-    // require value between (-1,1)
-    void setNormalizedValue(float val);
-    // doing the same thing but prevent from passing wrong value
-    void setNormalizedValueSafe(float val);
-
     // reguire value between (-255,255)
-    void setValue(float val);
+    void setValueDirectly(int val);
     // doing the same thing but prevent from passing wrong value
-    void setValueSafe(float val);
-    float getValue();
+    void setValueSmoothed(int val);
 
-    uint8_t fwd_pin;
-    uint8_t bwd_pin;
-    uint8_t pwm_pin;
-    float accel_val;
-    float deaccel_val;
-    float max_val;
+    int getValue();
+
+private:
+   
+    unsigned long lastTime = 0;
+    int actVel = 0;
+    int desiredVel = 0;
+    uint8_t fwdPin;
+    uint8_t bwdPin;
+    uint8_t pwmPin;
+    int velChange = 0;
+    int maxVel = 0;
 };
 
 #endif
