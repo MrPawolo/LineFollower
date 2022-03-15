@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #line 1 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 #include "MotorDriver.h"
-#define DISABLE_PERFORM_DEBOUNCE_CORRECTION
 #include "ButtonUtils.h"
 #include "string.h"
 
@@ -14,6 +13,7 @@ MotorDriver rightMotor(4, 5, 6, 200, 255);
 
 ButtonUtils startButton(2, *onStartButtonPositiveEdge, nullptr, nullptr);
 ButtonUtils stopButton(2, *onStopButtonPositiveEdge, nullptr, nullptr);
+
 
 
 #line 17 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"

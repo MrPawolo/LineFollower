@@ -1,11 +1,10 @@
 # 1 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 # 2 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 2
-
+# 3 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 2
 # 4 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 2
-# 5 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 2
 
 
-# 6 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+# 5 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 void onStartButtonPositiveEdge();
 void onStopButtonPositiveEdge();
 
@@ -15,6 +14,7 @@ MotorDriver rightMotor(4, 5, 6, 200, 255);
 
 ButtonUtils startButton(2, *onStartButtonPositiveEdge, nullptr, nullptr);
 ButtonUtils stopButton(2, *onStopButtonPositiveEdge, nullptr, nullptr);
+
 
 
 void setup()

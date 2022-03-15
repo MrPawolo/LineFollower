@@ -1,3 +1,4 @@
+#line 1 "d:\\Projects\\Arduino\\LineFollower\\LineDetector.h"
 #ifndef LINE_DETECTOR
 #define LINE_DETECTOR
 

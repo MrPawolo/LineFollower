@@ -35,7 +35,7 @@ void ButtonUtils::CheckState(int state)
         {
             checkingState = false;
         }
-
+        
         return;
     }
 

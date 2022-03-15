@@ -20,6 +20,11 @@
     "Includepath": null
   },
   {
+    "Sourcefile": "d:\\Projects\\Arduino\\LineFollower\\build\\sketch\\LineDetector.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
     "Sourcefile": "d:\\Projects\\Arduino\\LineFollower\\build\\sketch\\MotorDriver.cpp",
     "Include": "",
     "Includepath": null
