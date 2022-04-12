@@ -2,12 +2,12 @@
   {
     "Sourcefile": null,
     "Include": "",
-    "Includepath": "D:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\cores\\arduino"
+    "Includepath": "C:\\Users\\mrpaw\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.5\\cores\\arduino"
   },
   {
     "Sourcefile": null,
     "Include": "",
-    "Includepath": "D:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\variants\\standard"
+    "Includepath": "C:\\Users\\mrpaw\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.5\\variants\\standard"
   },
   {
     "Sourcefile": "d:\\Projects\\Arduino\\LineFollower\\build\\sketch\\LineFollower.ino.cpp",

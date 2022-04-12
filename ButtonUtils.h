@@ -32,6 +32,7 @@ public:
 private:
 
     bool checkingState = false;
+    int actState = HIGH;
     int prevState = HIGH;
     unsigned long prevTime = 0;
     unsigned long actTime = 0;

@@ -16,3 +16,7 @@ int clamp(int inVal, int min, int max)
     return inVal;
 }
 
+int lerp(int a, int b, float t)
+{
+    return a*(1-t) +  b*t;
+}

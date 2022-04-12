@@ -11,7 +11,10 @@ ButtonUtils::ButtonUtils(int pin, void (*on_positive_edge)(), void (*on_negative
 #ifndef DISABLE_PERFORM_DEBOUNCE_CORRECTION
 ButtonUtils::ButtonUtils(int pin, void (*on_positive_edge)(), void (*on_negative_edge)(), void (*on_clicked)(), int debounceTimeMicros)
 {
-    ButtonUtils(pin, *on_positive_edge, *on_negative_edge, *on_clicked);
+    onPositiveEdge = on_positive_edge;
+    onClicked = on_clicked;
+    onNegativeEdge = on_negative_edge;
+    ButtonUtils::pin = pin;
     ButtonUtils::debounceTimeMicros = debounceTimeMicros;
 }
 #endif
@@ -44,7 +47,8 @@ void ButtonUtils::CheckState(int state)
     prevTime = micros();
     checkingState = true;
     prevState = state;
-    PerformEvents(state);
+    actState = state;
+    //PerformEvents(state);
 }
 #endif
 
@@ -54,6 +58,7 @@ void ButtonUtils::tick()
 
 #ifndef DISABLE_PERFORM_DEBOUNCE_CORRECTION
     CheckState(currentState);
+    PerformEvents(actState);
 #else
     PerformEvents(currentState);
 #endif

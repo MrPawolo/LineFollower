@@ -2,17 +2,16 @@
 
 #include "MotorDriver.h"
 
-MotorDriver::MotorDriver(uint8_t fwd_pin, uint8_t bwd_pin, uint8_t pwm_pin, int accel_val, int max_val)
+MotorDriver::MotorDriver(uint8_t fwd_pin, uint8_t bwd_pin, uint8_t pwm_pin, int max_val)
 {
-    MotorDriver::setupValues(fwd_pin, bwd_pin, pwm_pin, accel_val, max_val);
+    MotorDriver::setupValues(fwd_pin, bwd_pin, pwm_pin, max_val);
 }
 
-void MotorDriver::setupValues(uint8_t fwd_pin, uint8_t bwd_pin, uint8_t pwm_pin, int accel_val, int max_val)
+void MotorDriver::setupValues(uint8_t fwd_pin, uint8_t bwd_pin, uint8_t pwm_pin, int max_val)
 {
     MotorDriver::fwdPin = fwd_pin;
     MotorDriver::bwdPin = bwd_pin;
     MotorDriver::pwmPin = pwm_pin;
-    MotorDriver::velChange = max(accel_val, 0);
     MotorDriver::maxVel = clamp(max_val, 0, 255);
 };
 
@@ -23,29 +22,7 @@ void MotorDriver::setup()
     pinMode(pwmPin, OUTPUT);
 }
 
-void MotorDriver::tick()
-{
-    unsigned long time = millis();
-    int deltaTime = time - lastTime;
-    lastTime = time;
-    int velDifference = desiredVel - actVel; // accelerating 100 = 255 - 100; or 100 = -255 - -100  deaccelerating -100 = 0 - 100  100 = 0 - -100;
 
-    if (velDifference == 0)
-        return;
-
-    int deltaVel = sign(velDifference) * velChange;
-
-    if (abs(deltaVel) > abs(velDifference))
-    {
-        actVel = desiredVel;
-    }
-    else
-    {
-        actVel += deltaVel;
-    }
-
-    setValueDirectly(actVel);
-}
 
 void MotorDriver::setValueDirectly(int val)
 {
@@ -67,13 +44,9 @@ void MotorDriver::setValueDirectly(int val)
         digitalWrite(fwdPin, LOW);
         digitalWrite(bwdPin, HIGH);
     }
-    analogWrite(pwmPin, min(val, maxVel));
-}
-
-
-void MotorDriver::setValueSmoothed(int val)
-{
-    desiredVel = val;
+    val = abs(val);
+    actVel = map(val, 0,255,0,maxVel);
+    analogWrite(pwmPin, actVel);
 }
 
 int MotorDriver::getValue()
