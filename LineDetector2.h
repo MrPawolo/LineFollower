@@ -13,8 +13,8 @@ public:
     int getValue();
 private:
     uint8_t pin;
-    int lowNoiseLevel = 0;
-    int highNoiseLevel = 1023;
+    int lowNoiseLevel = 30;
+    int highNoiseLevel = 600;
 
     int calibrateLowNoise = 1023;
     int calibrateHighNoise = 0;

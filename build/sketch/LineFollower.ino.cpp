@@ -8,16 +8,17 @@
 
 #define debugBuild
 
-const uint8_t button = 7;
-const uint8_t led = 6;
+#define opto A0
+#define button 7
+#define led 6
 
-byte fwdP = 8;
-byte bwdP = 9;
-byte pwmP = 10;
+#define fwdP 8
+#define bwdP 9
+#define pwmP 10
 
-byte fwdL = 13;
-byte bwdL = 12;
-byte pwmL = 11;
+#define fwdL 13
+#define bwdL 12
+#define pwmL 11
 
 enum Mode
 {
@@ -25,13 +26,11 @@ enum Mode
   FollowingLine
 };
 
-Mode programMode;
-
+Mode programMode = Mode::FollowingLine;
 
 void onButtonPositiveEdge();
 
-
-ButtonUtils modeButton(button, *onButtonPositiveEdge, nullptr, nullptr);
+ButtonUtils modeButton(button, *onButtonPositiveEdge, nullptr, nullptr,200);
 
 MotorDriver leftMotor(fwdL, bwdL, pwmL, 255);
 MotorDriver rightMotor(fwdP, bwdP, pwmP, 255);
@@ -40,49 +39,83 @@ int rightMotorVal = 0;
 SmootherBase *leftMotorSmoother = new VelocitySmoother(10.0f);
 SmootherBase *rightMotorSmoother = new VelocitySmoother(10.0f);
 
-LineDetector2 linedetector(A0);
-float kp = 1;
+LineDetector2 linedetector(opto);
+float kp = 5;
 float ki = 0;
 float kd = 0;
-PID pid(kp, ki, kd);
+PID pid(kp, ki, kd, 255);
 int lastDir = 0;
 
-
-#line 63 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+#line 65 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+void print(String msg);
+#line 72 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+void enableSignal();
+#line 87 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 void setup();
-#line 73 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+#line 102 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 void updateTicks();
-#line 78 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
-int GetVal(int prevDir);
-#line 83 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
-void SetMotors(int dir);
 #line 107 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+int GetVal(int prevDir);
+#line 114 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+void SetMotors(int dir);
+#line 138 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 void ApplyMotorValues();
-#line 112 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+#line 146 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 void loop();
-#line 49 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+#line 47 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 void onButtonPositiveEdge()
 {
-  if(programMode = Mode::Calibrate)
+  if (programMode == Mode::Calibrate)
   {
     linedetector.acceptCalibrateValues();
-  programMode = Mode::FollowingLine;
+    programMode = Mode::FollowingLine;
   }
-  else if(programMode = Mode::FollowingLine)
+  else if (programMode == Mode::FollowingLine)
   {
     programMode = Mode::Calibrate;
     linedetector.resetCalibration();
+  }
+#ifdef debugBuild
+  Serial.print("Mode:");
+  Serial.print(programMode);
+#endif
+}
+
+void print(String msg)
+{
+#ifdef debugBuild
+  Serial.println(msg);
+#endif
+}
+
+void enableSignal()
+{
+  for (int i = 0; i < 3; i++)
+  {
+    rightMotor.setValueDirectly(50);
+    leftMotor.setValueDirectly(50);
+    digitalWrite(led, 1);
+    delay(100);
+    rightMotor.setValueDirectly(0);
+    leftMotor.setValueDirectly(0);
+    digitalWrite(led, 0);
+    delay(100);
   }
 }
 
 void setup()
 {
+  Serial.begin(19200);
+  print("BeginSetup");
   modeButton.setup();
   leftMotor.setup();
   rightMotor.setup();
-#ifdef debugBuild
-  Serial.begin(9600);
-#endif
+  pinMode(led, OUTPUT);
+  pid.setValue(500);
+
+  enableSignal();
+
+  print("EndSetup");
 }
 
 void updateTicks()
@@ -92,7 +125,9 @@ void updateTicks()
 
 int GetVal(int prevDir)
 {
-  return linedetector.getValue();
+  int val = linedetector.getValue();
+  print("Value " + String(val));
+  return val;
 }
 
 void SetMotors(int dir) // value between -180 and 180 where 0 is forward
@@ -121,7 +156,10 @@ void SetMotors(int dir) // value between -180 and 180 where 0 is forward
 }
 void ApplyMotorValues()
 {
-  leftMotor.setValueDirectly(leftMotorSmoother->tick(leftMotorVal));
+  
+  float leftVal = leftMotorSmoother->tick(leftMotorVal);
+  leftMotor.setValueDirectly(leftVal);
+  print("  LeftM Val: " + String(leftMotorVal));
   rightMotor.setValueDirectly(rightMotorSmoother->tick(rightMotorVal));
 }
 void loop()
@@ -132,11 +170,25 @@ void loop()
     int value = GetVal(lastDir);
     int dir = pid.tick(value);
     lastDir = dir;
+    SetMotors(dir);
+
 
     ApplyMotorValues();
-  }else if(programMode == Mode::Calibrate)
-  {
-    linedetector.calibrate();
+    #ifdef debugBuild
+    Serial.print("Dir:");
+    Serial.print(lastDir);
+    Serial.print("  Motor:");
+    Serial.println(rightMotor.getValue());
+#endif
   }
+  else if (programMode == Mode::Calibrate)
+  {
+    leftMotor.setValueDirectly(0);
+    rightMotor.setValueDirectly(0);
+    linedetector.calibrate();
+    print("Calibration");
+  }
+  delay(50);
+  // Serial.println("");
 }
 

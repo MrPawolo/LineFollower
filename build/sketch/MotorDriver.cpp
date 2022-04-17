@@ -20,6 +20,7 @@ void MotorDriver::setup()
     pinMode(fwdPin, OUTPUT);
     pinMode(bwdPin, OUTPUT);
     pinMode(pwmPin, OUTPUT);
+    setValueDirectly(0);
 }
 
 
