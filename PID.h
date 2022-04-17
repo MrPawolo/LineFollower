@@ -3,8 +3,6 @@
 
 #include "Arduino.h"
 
-#define FIXED_STEP
-#define onlyP
 
 class PID
 {
