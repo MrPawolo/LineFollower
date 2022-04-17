@@ -14,10 +14,10 @@
 
 enum Mode
 {
-  Calibrate,
+  Wait,
   FollowingLine
 };
-Mode programMode = Mode::FollowingLine;
+Mode programMode = Mode::Wait;
 
 #pragma endregion
 
@@ -40,12 +40,12 @@ ButtonUtils modeButton(button, *onButtonPositiveEdge, nullptr, nullptr, 200);
 //---------------------------------------
 #pragma region  Motor
 
-MotorDriver leftMotor(fwdL, bwdL, pwmL, 255);
+MotorDriver leftMotor(fwdL, bwdL, pwmL, 255 );
 MotorDriver rightMotor(fwdP, bwdP, pwmP, 255);
 int leftMotorVal = 0;
 int rightMotorVal = 0;
-SmootherBase *leftMotorSmoother = new VelocitySmoother(10.0f);
-SmootherBase *rightMotorSmoother = new VelocitySmoother(10.0f);
+SmootherBase *leftMotorSmoother = new VelocitySmoother(maxVelChange);
+SmootherBase *rightMotorSmoother = new VelocitySmoother(maxVelChange);
 
 #pragma endregion
 
@@ -53,54 +53,58 @@ SmootherBase *rightMotorSmoother = new VelocitySmoother(10.0f);
 //--------------Line Detector------------
 //---------------------------------------
 LineDetector2 linedetector(opto);
+SmootherBase *signalSmoother = new ProportionalSmoother(1.0f);
 
 //---------------------------------------
 //--------------PID----------------------
 //---------------------------------------
 #pragma region  PID
 
-float kp = 5;
-float ki = 0;
-float kd = 0;
-PID pid(kp, ki, kd, 255);
+const float kp = 0.24f;
+const float ki = 0;//0.6f;
+const float kd = 0;//0.5f;
+const float maxOutput = 255;
+const float maxI = 150;
+const float maxD = 100;
+PID pid(kp, ki, kd, maxOutput, maxI, maxD);
 int lastDir = 0;
 
 #pragma endregion
 
 #pragma region Misc
 
-#line 88 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+#line 92 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 void print(String msg);
-#line 95 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
-void enableSignal();
-#line 113 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+#line 99 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+void signal(int count, int lowTime, int highTime);
+#line 117 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 void setup();
-#line 131 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
-int GetVal(int prevDir);
-#line 138 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+#line 136 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+float GetVal(int prevDir);
+#line 143 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 void SetMotors(int dir);
-#line 166 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+#line 171 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 void ApplyMotorValues();
-#line 177 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+#line 183 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 void updateTicks();
-#line 182 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+#line 188 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 void followingLine();
-#line 195 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
-void callibrating();
-#line 205 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+#line 201 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+void wait();
+#line 210 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 void loop();
-#line 70 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+#line 74 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
 void onButtonPositiveEdge()
 {
-  if (programMode == Mode::Calibrate)
+  if (programMode == Mode::Wait)
   {
-    linedetector.acceptCalibrateValues();
     programMode = Mode::FollowingLine;
+    signal(5,200,100);
   }
   else if (programMode == Mode::FollowingLine)
   {
-    programMode = Mode::Calibrate;
-    linedetector.resetCalibration();
+    programMode = Mode::Wait;
+    signal(2,100,100);
   }
 #ifdef debugBuild
   Serial.print("Mode:");
@@ -115,18 +119,18 @@ void print(String msg)
 #endif
 }
 
-void enableSignal()
+void signal(int count, int lowTime, int highTime)
 {
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < count; i++)
   {
     rightMotor.setValueDirectly(50);
     leftMotor.setValueDirectly(50);
     digitalWrite(led, 1);
-    delay(100);
+    delay(highTime);
     rightMotor.setValueDirectly(0);
     leftMotor.setValueDirectly(0);
     digitalWrite(led, 0);
-    delay(100);
+    delay(lowTime);
   }
 }
 
@@ -142,16 +146,17 @@ void setup()
   leftMotor.setup();
   rightMotor.setup();
   pinMode(led, OUTPUT);
-  pid.setValue(500);
+  pid.setValue(targetVal);
+  linedetector.setMinMax(minNoise, maxNoise);
 
 
-  enableSignal();
+  signal(3,100,100);
   print("EndSetup");
 }
 
 
 
-int GetVal(int prevDir)
+float GetVal(int prevDir)
 {
   int val = linedetector.getValue();
   print("Value " + String(val));
@@ -188,10 +193,11 @@ void SetMotors(int dir) // value between -180 and 180 where 0 is forward
 
 void ApplyMotorValues()
 {
-  float leftVal = leftMotorSmoother->tick(leftMotorVal);
-  leftMotor.setValueDirectly(leftVal);
-  print(" LeftM Val: " + String(leftMotorVal));
-  rightMotor.setValueDirectly(rightMotorSmoother->tick(rightMotorVal));
+  // leftMotor.setValueDirectly(leftMotorSmoother->tick(leftMotorVal));
+  // rightMotor.setValueDirectly(rightMotorSmoother->tick(rightMotorVal));
+
+  leftMotor.setValueDirectly(leftMotorVal);
+  rightMotor.setValueDirectly(rightMotorVal);
 }
 
 
@@ -204,23 +210,22 @@ void updateTicks()
 
 void followingLine()
 {
-  int value = GetVal(lastDir);
-  int dir = pid.tick(value);
+  float value = GetVal(lastDir);
+  //value = signalSmoother->tick(value);
+  float dir = pid.tick(value);
   lastDir = dir;
   SetMotors(dir);
 
   ApplyMotorValues();
 
-  print(" Dir: " + String(value) + F(" PID Val: ") + String(dir) + F(" MotorR: ") 
-   + String(rightMotor.getValue()) + F(" MotorL: ") + String(leftMotor.getValue()));
+  print("Val: " + String(value) + " PID Val: " + String(dir) + F(" MotorR: ") + String(rightMotorVal) + F(" MotorL: ") + String(leftMotorVal));
 }
 
-void callibrating()
+void wait()
 {
   leftMotor.setValueDirectly(0);
   rightMotor.setValueDirectly(0);
-  linedetector.calibrate();
-  print(F("Calibration"));
+  analogWrite(led, map(linedetector.getValue(),0,1023,0,255));
 }
 
 #pragma endregion
@@ -232,10 +237,11 @@ void loop()
   {
     followingLine();
   }
-  else if (programMode == Mode::Calibrate)
+  else
   {
-    callibrating();
+    wait();
   }
-  delay(50);
+  delay(10);
+  print("--------------:" + String(programMode));
 }
 

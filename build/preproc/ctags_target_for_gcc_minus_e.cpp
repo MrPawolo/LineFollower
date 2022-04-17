@@ -13,10 +13,10 @@
 
 enum Mode
 {
-  Calibrate,
+  Wait,
   FollowingLine
 };
-Mode programMode = Mode::FollowingLine;
+Mode programMode = Mode::Wait;
 
 #pragma endregion
 
@@ -39,12 +39,12 @@ ButtonUtils modeButton(7, *onButtonPositiveEdge, nullptr, nullptr, 200);
 //---------------------------------------
 #pragma region Motor
 
-MotorDriver leftMotor(13, 12, 11, 255);
+MotorDriver leftMotor(13, 12, 11, 255 );
 MotorDriver rightMotor(8, 9, 10, 255);
 int leftMotorVal = 0;
 int rightMotorVal = 0;
-SmootherBase *leftMotorSmoother = new VelocitySmoother(10.0f);
-SmootherBase *rightMotorSmoother = new VelocitySmoother(10.0f);
+SmootherBase *leftMotorSmoother = new VelocitySmoother(400);
+SmootherBase *rightMotorSmoother = new VelocitySmoother(400);
 
 #pragma endregion
 
@@ -52,16 +52,20 @@ SmootherBase *rightMotorSmoother = new VelocitySmoother(10.0f);
 //--------------Line Detector------------
 //---------------------------------------
 LineDetector2 linedetector(A0);
+SmootherBase *signalSmoother = new ProportionalSmoother(1.0f);
 
 //---------------------------------------
 //--------------PID----------------------
 //---------------------------------------
 #pragma region PID
 
-float kp = 5;
-float ki = 0;
-float kd = 0;
-PID pid(kp, ki, kd, 255);
+const float kp = 0.24f;
+const float ki = 0;//0.6f;
+const float kd = 0;//0.5f;
+const float maxOutput = 255;
+const float maxI = 150;
+const float maxD = 100;
+PID pid(kp, ki, kd, maxOutput, maxI, maxD);
 int lastDir = 0;
 
 #pragma endregion
@@ -70,15 +74,15 @@ int lastDir = 0;
 
 void onButtonPositiveEdge()
 {
-  if (programMode == Mode::Calibrate)
+  if (programMode == Mode::Wait)
   {
-    linedetector.acceptCalibrateValues();
     programMode = Mode::FollowingLine;
+    signal(5,200,100);
   }
   else if (programMode == Mode::FollowingLine)
   {
-    programMode = Mode::Calibrate;
-    linedetector.resetCalibration();
+    programMode = Mode::Wait;
+    signal(2,100,100);
   }
 
   Serial.print("Mode:");
@@ -93,18 +97,18 @@ void print(String msg)
 
 }
 
-void enableSignal()
+void signal(int count, int lowTime, int highTime)
 {
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < count; i++)
   {
     rightMotor.setValueDirectly(50);
     leftMotor.setValueDirectly(50);
     digitalWrite(6, 1);
-    delay(100);
+    delay(highTime);
     rightMotor.setValueDirectly(0);
     leftMotor.setValueDirectly(0);
     digitalWrite(6, 0);
-    delay(100);
+    delay(lowTime);
   }
 }
 
@@ -120,16 +124,17 @@ void setup()
   leftMotor.setup();
   rightMotor.setup();
   pinMode(6, 0x1);
-  pid.setValue(500);
+  pid.setValue(300);
+  linedetector.setMinMax(28, 400);
 
 
-  enableSignal();
+  signal(3,100,100);
   print("EndSetup");
 }
 
 
 
-int GetVal(int prevDir)
+float GetVal(int prevDir)
 {
   int val = linedetector.getValue();
   print("Value " + String(val));
@@ -166,10 +171,11 @@ void SetMotors(int dir) // value between -180 and 180 where 0 is forward
 
 void ApplyMotorValues()
 {
-  float leftVal = leftMotorSmoother->tick(leftMotorVal);
-  leftMotor.setValueDirectly(leftVal);
-  print(" LeftM Val: " + String(leftMotorVal));
-  rightMotor.setValueDirectly(rightMotorSmoother->tick(rightMotorVal));
+  // leftMotor.setValueDirectly(leftMotorSmoother->tick(leftMotorVal));
+  // rightMotor.setValueDirectly(rightMotorSmoother->tick(rightMotorVal));
+
+  leftMotor.setValueDirectly(leftMotorVal);
+  rightMotor.setValueDirectly(rightMotorVal);
 }
 
 
@@ -182,55 +188,38 @@ void updateTicks()
 
 void followingLine()
 {
-  int value = GetVal(lastDir);
-  int dir = pid.tick(value);
+  float value = GetVal(lastDir);
+  //value = signalSmoother->tick(value);
+  float dir = pid.tick(value);
   lastDir = dir;
   SetMotors(dir);
 
   ApplyMotorValues();
 
-  print(" Dir: " + String(value) + (reinterpret_cast<const __FlashStringHelper *>(
-# 191 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 3
-                                  (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 191 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
-                                  " PID Val: "
-# 191 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 3
-                                  ); &__c[0];}))
-# 191 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
-                                  )) + String(dir) + (reinterpret_cast<const __FlashStringHelper *>(
-# 191 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 3
-                                                                  (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 191 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
-                                                                  " MotorR: "
-# 191 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 3
-                                                                  ); &__c[0];}))
-# 191 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
-                                                                  ))
-   + String(rightMotor.getValue()) + (reinterpret_cast<const __FlashStringHelper *>(
-# 192 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 3
-                                    (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 192 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
-                                    " MotorL: "
-# 192 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 3
-                                    ); &__c[0];}))
-# 192 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
-                                    )) + String(leftMotor.getValue()));
+  print("Val: " + String(value) + " PID Val: " + String(dir) + (reinterpret_cast<const __FlashStringHelper *>(
+# 198 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 3
+                                                              (__extension__({static const char __c[] __attribute__((__progmem__)) = (
+# 198 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+                                                              " MotorR: "
+# 198 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 3
+                                                              ); &__c[0];}))
+# 198 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+                                                              )) + String(rightMotorVal) + (reinterpret_cast<const __FlashStringHelper *>(
+# 198 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 3
+                                                                                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
+# 198 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+                                                                                                       " MotorL: "
+# 198 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 3
+                                                                                                       ); &__c[0];}))
+# 198 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
+                                                                                                       )) + String(leftMotorVal));
 }
 
-void callibrating()
+void wait()
 {
   leftMotor.setValueDirectly(0);
   rightMotor.setValueDirectly(0);
-  linedetector.calibrate();
-  print((reinterpret_cast<const __FlashStringHelper *>(
-# 200 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 3
-       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 200 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
-       "Calibration"
-# 200 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino" 3
-       ); &__c[0];}))
-# 200 "d:\\Projects\\Arduino\\LineFollower\\LineFollower.ino"
-       )));
+  analogWrite(6, map(linedetector.getValue(),0,1023,0,255));
 }
 
 #pragma endregion
@@ -242,9 +231,10 @@ void loop()
   {
     followingLine();
   }
-  else if (programMode == Mode::Calibrate)
+  else
   {
-    callibrating();
+    wait();
   }
-  delay(50);
+  delay(10);
+  print("--------------:" + String(programMode));
 }

@@ -16,7 +16,19 @@
 #define pwmL 11
 
 
+//Line detector
+#define minNoise 28
+#define maxNoise 300
+
+
+#define targetVal 500
+
 //PID
-#define onlyP
+//#define onlyP
+#define clampI
+//#define clampD
+
+//Motor
+#define maxVelChange 400
 
 #endif

@@ -27,6 +27,7 @@ void MotorDriver::setup()
 
 void MotorDriver::setValueDirectly(int val)
 {
+    val = clamp(val, -255, 255);
     if (val == 0)
     {
         digitalWrite(bwdPin, LOW);
@@ -45,6 +46,7 @@ void MotorDriver::setValueDirectly(int val)
         digitalWrite(fwdPin, LOW);
         digitalWrite(bwdPin, HIGH);
     }
+
     val = abs(val);
     actVel = map(val, 0,255,0,maxVel);
     analogWrite(pwmPin, actVel);
