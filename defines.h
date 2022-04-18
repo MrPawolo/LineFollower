@@ -1,7 +1,7 @@
 #ifndef DEFINES
 #define DEFINES
 
-#define debugBuild
+//#define debugBuild
 
 #define opto A0
 #define button 7
@@ -18,7 +18,7 @@
 
 //Line detector
 #define minNoise 28
-#define maxNoise 300
+#define maxNoise 400
 
 
 #define targetVal 500
@@ -26,9 +26,12 @@
 //PID
 //#define onlyP
 #define clampI
-//#define clampD
+#define clampD
 
 //Motor
 #define maxVelChange 400
+#define propChange 0.01f
+#define minPWM 110
+#define limitRot 140
 
 #endif

@@ -58,7 +58,7 @@ float PID::tick(float actValue)
     unsigned long actTime = micros();
     unsigned long deltaTime = actTime - lastTime;
     lastTime = actTime;
-    Serial.println("DT: " + String(deltaTime));
+    //Serial.println("DT: " + String(deltaTime));
     return tick(actValue, deltaTime);
 }
 

@@ -1,17 +1,18 @@
 
 #include "MotorDriver.h"
 
-MotorDriver::MotorDriver(uint8_t fwd_pin, uint8_t bwd_pin, uint8_t pwm_pin, int max_val)
+MotorDriver::MotorDriver(uint8_t fwd_pin, uint8_t bwd_pin, uint8_t pwm_pin, int min_val, int max_val)
 {
-    MotorDriver::setupValues(fwd_pin, bwd_pin, pwm_pin, max_val);
+    MotorDriver::setupValues(fwd_pin, bwd_pin, pwm_pin, min_val, max_val);
 }
 
-void MotorDriver::setupValues(uint8_t fwd_pin, uint8_t bwd_pin, uint8_t pwm_pin, int max_val)
+void MotorDriver::setupValues(uint8_t fwd_pin, uint8_t bwd_pin, uint8_t pwm_pin, int min_val,  int max_val)
 {
     MotorDriver::fwdPin = fwd_pin;
     MotorDriver::bwdPin = bwd_pin;
     MotorDriver::pwmPin = pwm_pin;
     MotorDriver::maxVel = clamp(max_val, 0, 255);
+    MotorDriver::minVel = clamp(min_val, 0, 255);
 };
 
 void MotorDriver::setup()
@@ -47,11 +48,23 @@ void MotorDriver::setValueDirectly(int val)
     }
 
     val = abs(val);
-    actVel = map(val, 0,255,0,maxVel);
+    actVel = map(val, 0,255,minVel,maxVel);
     analogWrite(pwmPin, actVel);
 }
 
 int MotorDriver::getValue()
 {
     return actVel;
+}
+
+
+void MotorDriver::noise()
+{
+    digitalWrite(bwdPin, LOW);
+    digitalWrite(fwdPin, HIGH);
+    analogWrite(pwmPin, 20);
+}
+void MotorDriver::stopNoise()
+{
+    setValueDirectly(0);
 }
