@@ -144,32 +144,7 @@ float GetVal(int prevDir)
 {
   int val = linedetector.getValue();
   P(print("Value " + String(val)));
-  
-  //val = signalSmoother->tick(val);
   int out = val;
-
-  // if(val >= lastValue +1)
-  // {
-  //   lowering = false;
-  // }
-
-  // if(val < lastValue  && lastDir < 0)
-  // {
-  //   lowering = true;
-  // }
-
-  
-  // if(lowering == true)
-  // {
-  //   out = 1023;
-  // }
-
-  // // if(val >= lastValue && lastDir > 0)
-  // // {
-  // //   out = 0;
-  // // }
-
-  // lastValue = val;
   return out;
 }
 
@@ -183,9 +158,6 @@ void SetMotors(int dir) // value between -180 and 180 where 0 is forward
     leftMotorVal = 255;
     return;
   }
-
-
-#ifdef LINEAR
   if (dir < 0)
   {
     rightMotorVal = 255;
@@ -201,19 +173,12 @@ void SetMotors(int dir) // value between -180 and 180 where 0 is forward
     rightMotorVal = val;
     return;
   }
-#endif
-
-
-
 }
 
 void ApplyMotorValues()
 {
    leftMotor.setValueDirectly(leftMotorSmoother->tick(leftMotorVal));
    rightMotor.setValueDirectly(rightMotorSmoother->tick(rightMotorVal));
-
-  //leftMotor.setValueDirectly(leftMotorVal);
-  //rightMotor.setValueDirectly(rightMotorVal);
 }
 
 #pragma region LoopRelated
