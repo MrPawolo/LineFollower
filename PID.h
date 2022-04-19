@@ -3,80 +3,107 @@
 
 #include "Arduino.h"
 
-
 class PID
 {
 public:
-    PID(float kp, float ki, float kd, long maxOutput);
-    void setValues(float kp, float ki, float kd, long maxOutput);
+    PID(float kp, float ki, float kd, float maxOutput, float maxI, float maxD);
+    void setValues(float kp, float ki, float kd, float maxOutput, float maxI, float maxD);
     void setValue(float value);
     float tick(float actValue);
     float tick(float actValue, unsigned long deltaTime);
 
-    long value;
+    float value;
     float kp = 0;
     float ki = 0;
     float kd = 0;
-    long maxOutput = 0;
+    float maxOutput = 0;
+    float maxI = 0;
+    float maxD = 0;
 
     unsigned long fixedStepTime = 10000; // microseconds
 
 private:
-    int desiredValue = 0;
+    float desiredValue = 0;
 
-    int lastError;
-    long errorSum;
+    float lastError;
+    float errorSum;
 
     unsigned long lastTime = 0;
 };
 
 #endif
 
-PID::PID(float kp, float ki, float kd, long maxOutput)
+PID::PID(float kp, float ki, float kd, float maxOutput, float maxI, float maxD)
 {
-    setValues(kp, ki, kd, maxOutput);
+    setValues(kp, ki, kd, maxOutput,  maxI,  maxD);
 }
 void PID::setValue(float value)
 {
     desiredValue = value;
 }
 
-void PID::setValues(float kp, float ki, float kd, long maxOutput)
+void PID::setValues(float kp, float ki, float kd, float maxOutput, float maxI, float maxD)
 {
     PID::kp = kp;
     PID::ki = ki;
     PID::kd = kd;
     PID::maxOutput = maxOutput;
+    PID::maxI = maxI;
+    PID::maxD = maxD;
 }
 
 float PID::tick(float actValue)
 {
     unsigned long actTime = micros();
-    unsigned long deltaTime = actTime = lastTime;
+    unsigned long deltaTime = actTime - lastTime;
     lastTime = actTime;
+    //Serial.println("DT: " + String(deltaTime));
     return tick(actValue, deltaTime);
 }
 
 float PID::tick(float actValue, unsigned long deltaTime)
 {
-    long error = desiredValue - actValue;
-    long out = 0;
+    float out = 0;
 
-    out += error * ki;
+    float error = desiredValue - actValue;
+//---------------P---------------------
+    out += error * kp;
 
 #ifndef onlyP
-    long area = (lastError + error) / 2 * deltaTime;
-    errorSum += area;
-    // if(abs(out + errorSum * ki) < abs(maxOutput))
-    out += errorSum * ki;
 
-    long errorChange = (error - lastError) / deltaTime;
-    // if(abs(out + errorChange * kd) < abs(maxOutput))
-    out += errorChange * kd;
+//--------------I-----------------------
+    float area = (lastError + error) / 2 * deltaTime / 1000000.0f;
+    float sum = area * ki;
 
-    lastError = error;
+#ifdef clampI
+    float diff = maxI - abs(errorSum + sum);
+    errorSum += diff > 0 ? sum : 0;
+#else
+    errorSum += sum;
+#endif
+    out += errorSum;
 
+
+//--------------D-----------------------
+if(deltaTime != 0){
+    float errorChange = (error - lastError) / deltaTime / 1000000.0f;
+#ifdef clampD
+    float diff = maxD - abs(sum);
+    out += diff > 0 ? errorChange * kd : 0;
+#else
+    out += (errorChange * kd);
+#endif
+}
+
+     lastError = error;
+ #endif
+
+#ifdef clampPIDout
+    out = clamp(out, -maxOutput, maxOutput);
 #endif
 
+
+
     value = out;
+    return out;
 }

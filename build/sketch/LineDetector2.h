@@ -11,11 +11,12 @@ public:
     void calibrate();
     void resetCalibration();
     void acceptCalibrateValues();
+    void setMinMax(int min, int max);
     int getValue();
 private:
     uint8_t pin;
-    int lowNoiseLevel = 30;
-    int highNoiseLevel = 600;
+    int lowNoiseLevel = 0;
+    int highNoiseLevel = 1023;
 
     int calibrateLowNoise = 1023;
     int calibrateHighNoise = 0;
@@ -25,6 +26,12 @@ private:
 LineDetector2::LineDetector2(uint8_t pin)
 {
     LineDetector2::pin = pin;
+}
+
+void LineDetector2::setMinMax(int min, int max)
+{
+    LineDetector2::lowNoiseLevel = min;
+    LineDetector2::highNoiseLevel = max;
 }
 
 void LineDetector2::resetCalibration()

@@ -14,6 +14,20 @@ int clamp(int inVal, int min, int max)
 
     return inVal;
 }
+float clamp(float inVal, float min, float max)
+{
+    if (inVal < min)
+    {
+        return min;
+    }
+
+    if (inVal > max)
+    {
+        return max;
+    }
+
+    return inVal;
+}
 
 int lerp(int a, int b, float t)
 {
