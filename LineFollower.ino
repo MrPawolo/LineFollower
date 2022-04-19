@@ -1,7 +1,7 @@
 #include "defines.h"
 #include "MotorDriver.h"
 #include "ButtonUtils.h"
-#include "LineDetector2.h"
+#include "LineDetector.h"
 #include "PID.h"
 #include "Smoothers.h"
 
@@ -55,7 +55,7 @@ SmootherBase *rightMotorSmoother = new ProportionalSmoother(propChange);
 //---------------------------------------
 //--------------Line Detector------------
 //---------------------------------------
-LineDetector2 linedetector(opto);
+LineDetector linedetector(opto);
 SmootherBase *signalSmoother = new ProportionalSmoother(0.03f);
 
 //---------------------------------------
